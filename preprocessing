@@ -1,10 +1,12 @@
-import glob
 import PIL 
-import cv2
 import numpy as np
+import cv2
+import csv
+import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
 from os import listdir
+from scipy import ndimage, misc
 from os.path import isfile, join
 
 def loadImages(path):
@@ -66,9 +68,48 @@ def RGBtoGreyscale(images):
 
         greyscale[i] = np.array(Gray_Color)
     return greyscale
+
+def findMaxWidth(images):
+    Max = 0
+    for i in range(len(images)):
+        size = images[i].shape
+        if(size[0] > Max):
+            Max = size[0]
+    return Max
+
+def findMaxLenght(images):
+    Max = 0
+    for i in range(len(images)):
+        size = images[i].shape
+        if(size[1] > Max):
+            Max = size[1]
+    return Max
+
+def zeroPadding(images):
+    maxw = findMaxWidth(images)
+    maxl = findMaxLenght(images)
+    result = np.zeros((len(images),maxl,maxw), dtype=np.uint8)
+    
+    for i in range(len(images)):
+        img = images[i]
+        lenght, width= img.shape
+
+        # create new image of desired size and color (blue) for padding
+        ww = 300
+        hh = 300
+
+        # compute center offset
+        xpos = (maxw - width) // 2
+        ypos = (maxl - lenght) // 2
+
+        # copy img image into center of result image
+        result[i, ypos:ypos+lenght, xpos:xpos+width] = img
+    return result
+
+def saveCSV(filename, dataset)
     
 #Location of images on my computer, will be different for yours
-path = 'C:\\Users\\User\\Desktop\\101_ObjectCategories\\'
+path = 'C:\\Users\\\Athena\\Desktop\\101_ObjectCategories\\'
 #Type of images we want to work on -- accordion in this case
 subPath1 = 'accordion\\'
 
@@ -79,18 +120,12 @@ images1 = loadImages(fileLoc1)
 
 color_images = BGRtoRGB(images1)
 
-im = Image.fromarray(color_images[39])
-#im.show()
-
 gray_images = RGBtoGreyscale(color_images)
 
-features = np.zeros((len(gray_images),(len(gray_images[0][:]) * len(gray_images[0][0]))), dtype = int)
-#print(features[0].shape)
-#print(gray_images[0].shape)
-#print(len(gray_images[0][:]))
-#print(len(gray_images[0][0]))
-for i in range(len(gray_images) - 1):
-    print(gray_images[i].shape)
-    temp = np.reshape(gray_images[i], (len(gray_images[0][:]) * len(gray_images[0][0])))
-    print(temp.shape)
-    features[i] = temp
+zero_padded = zeroPadding(gray_images)
+
+max_width = findMaxWidth(gray_images)
+max_lenght = findMaxLenght(gray_images)
+features = np.zeros((len(zero_padded),(max_width * max_lenght)), dtype = int)
+for i in range(len(zero_padded) - 1):
+    features[i] = np.ravel(zero_padded[i])
