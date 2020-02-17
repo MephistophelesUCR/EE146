@@ -1,0 +1,96 @@
+import glob
+import PIL 
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+from os import listdir
+from os.path import isfile, join
+
+def loadImages(path):
+    readfile = [f for f in listdir(path) if isfile(join(path,f)) ]
+    images = np.empty(len(readfile), dtype=object)
+    for n in range(0, len(readfile)):
+        images[n] = cv2.imread(join(path, readfile[n]))
+    return images
+
+def assignLabels(array, label, size):
+    vector = np.zeros(len(array), dtype = int)
+    for x in range(len(vector)):
+        vector[x] = label
+    return vector
+
+def BGRtoRGB(images):
+    newImages = images
+    for i in range(len(images)):
+        temp = Image.fromarray(images[i])
+        b, g, r = temp.split()
+        temp = Image.merge("RGB", (r,g,b))
+        newImages[i] = np.array(temp)
+    return newImages
+
+def sRGBtoLinear(x):
+    if (x < 0.04045): 
+        return x/12.92
+    return pow((x+0.055)/1.055, 2.4)
+
+def LineartosRGB(y): 
+    if (y <= 0.0031308): 
+        return 12.92 * y
+    return 1.055 * pow(y, 1/2.4) - 0.055
+
+def RGBtoGreyscale(images):
+    greyscale = images
+    
+    for i in range(len(images)):
+        temp = Image.fromarray(images[i])
+        b, g, r = temp.split()
+        R = np.array(r)
+        G = np.array(g)
+        B = np.array(b)
+        
+        R_linear = np.zeros((len(R[:,0]), len(R[0,:])), dtype = float)
+        G_linear = np.zeros((len(G[:,0]), len(G[0,:])), dtype = float)
+        B_linear = np.zeros((len(B[:,0]), len(B[0,:])), dtype = float)
+        Gray_linear = np.zeros((len(B[:,0]), len(B[0,:])), dtype = float)
+        Gray_Color = np.zeros((len(B[:,0]), len(B[0,:])), dtype = int)
+        
+        for j in range(len(R[:,0])-1):
+            for k in range(len(R[0,:])-1):
+                R_linear[j][k] =sRGBtoLinear((R[j][k])/255.0)
+                G_linear[j][k] =sRGBtoLinear((G[j][k])/255.0)
+                B_linear[j][k] =sRGBtoLinear((B[j][k])/255.0)
+                
+                Gray_linear[j][k] = 0.2126 * R_linear[j][k] + 0.7152 * G_linear[j][k] + 0.0722 * B_linear[j][k]
+                Gray_Color[j][k] = int(LineartosRGB(Gray_linear[j][k]) * 255)
+
+        greyscale[i] = np.array(Gray_Color)
+    return greyscale
+    
+#Location of images on my computer, will be different for yours
+path = 'C:\\Users\\User\\Desktop\\101_ObjectCategories\\'
+#Type of images we want to work on -- accordion in this case
+subPath1 = 'accordion\\'
+
+#Full file location
+fileLoc1 = (path + subPath1)
+
+images1 = loadImages(fileLoc1)
+
+color_images = BGRtoRGB(images1)
+
+im = Image.fromarray(color_images[39])
+#im.show()
+
+gray_images = RGBtoGreyscale(color_images)
+
+features = np.zeros((len(gray_images),(len(gray_images[0][:]) * len(gray_images[0][0]))), dtype = int)
+#print(features[0].shape)
+#print(gray_images[0].shape)
+#print(len(gray_images[0][:]))
+#print(len(gray_images[0][0]))
+for i in range(len(gray_images) - 1):
+    print(gray_images[i].shape)
+    temp = np.reshape(gray_images[i], (len(gray_images[0][:]) * len(gray_images[0][0])))
+    print(temp.shape)
+    features[i] = temp
