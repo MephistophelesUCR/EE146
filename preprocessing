@@ -106,22 +106,52 @@ def zeroPadding(images):
         result[i, ypos:ypos+lenght, xpos:xpos+width] = img
     return result
 
-def saveCSV(filename, dataset)
+# Recursively makes pyramiding column and row headers
+def make_header(n):
+    pre = ''
+    s1 = str(int(n/300)+1)
+    s2 = 'x'
+    s3 = str(int(n%300)+1)
+    pre += "{}{}{}". format(s1, s2, s3)
+    return pre
+
+# Generator object to create header items for n-rows or n-cols
+def gen_header(nitems):
+    n = -1
+    while n<nitems:
+        n+=1
+        yield make_header(n)
     
+#Location of images on my computer, will be different for yours
 #Location of images on my computer, will be different for yours
 path = 'C:\\Users\\\Athena\\Desktop\\101_ObjectCategories\\'
 #Type of images we want to work on -- accordion in this case
-subPath1 = 'accordion\\'
-
+Labels = ['accordion', 'airplanes', 'anchor', 'ant', 'barrel', 
+                'bass', 'beaver', 'binocular', 'bonsai', 'brain',
+                'brontosaurus', 'buddha', 'butterfly', 'camera', 'cannon', 
+                'car_side', 'ceiling_fan', 'cellphone', 'chair', 'chandelier', 
+                'cougar_body', 'cougar_face', 'crab', 'crayfish', 'crocodile',
+                'crocodile_head', 'cup', 'dalmatian', 'dollar_bill', 'dolphin',
+                'electric_guitar', 'elephant', 'emu', 'euphonium', 'ewer', 
+                'Faces', 'Faces_easy', 'ferry', 'flamingo', 'flamingo_head', 
+                'garfield', 'gerenuk', 'gramophone', 'grand_piano', 'hawksbill',
+                'headphones', 'hedgehog', 'helicopter', 'ibis', 'inline_skate',
+                'joshua_tree', 'kangaroo', 'ketch', 'lamp', 'laptop', 
+                'Leopards', 'llama', 'lobster', 'lotus', 'mandolin', 
+                'mayfly', 'menorah', 'metronome', 'minaret', 'Motorbikes',
+                'nautilus', 'octopus', 'okapi', 'pagoda', 'panda',
+                'pigeon', 'pizza', 'platypus', 'pyramid', 'revolver', 
+                'rhino', 'rooster', 'saxophone', 'schooner', 'scissors', 
+                'scorpion', 'sea_horse', 'snoopy', 'soccer_ball', 'stapler', 
+                'stegosaurus', 'stop_sign', 'strawberry', 'sunflower', 'tick', 
+                'trilobite', 'umbrella', 'watch', 'water_lilly', 'wheelchair',
+                'wild_cat', 'windsor_chair', 'wrench', 'yin_yang'] 
 #Full file location
-fileLoc1 = (path + subPath1)
+fileLoc = (path + Labels[0] +'\\')
 
-images1 = loadImages(fileLoc1)
-
+images1 = loadImages(fileLoc)
 color_images = BGRtoRGB(images1)
-
 gray_images = RGBtoGreyscale(color_images)
-
 zero_padded = zeroPadding(gray_images)
 
 max_width = findMaxWidth(gray_images)
@@ -129,3 +159,12 @@ max_lenght = findMaxLenght(gray_images)
 features = np.zeros((len(zero_padded),(max_width * max_lenght)), dtype = int)
 for i in range(len(zero_padded) - 1):
     features[i] = np.ravel(zero_padded[i])
+
+index = np.ndarray(len(features), dtype = object)
+for idx in range(len(features)):
+    index[idx] = Labels[0]
+    
+header = [hd for hd in gen_header(len(features[0])-1)]
+
+df = pd.DataFrame(features,columns = header, index = index) 
+df.to_csv('foo.csv')
